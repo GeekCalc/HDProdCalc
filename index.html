@@ -1,10 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hay Day – Production Planner & Ingredient Calculator</title>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Hay Day – Production Planner &amp; Ingredient Calculator</title>
+<style>
     :root { --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#0ea5e9; --danger:#fb7185; }
     html, body { background: var(--bg); color: var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial; margin: 0; }
     h1 { font-size: clamp(1rem, 2vw + .8rem, 1.6rem); margin: .6rem .9rem .3rem; }
@@ -19,7 +20,7 @@
     button { cursor: pointer; border: none; border-radius: 8px; padding: .45rem .65rem; font-weight: 600; }
     .btn { background: var(--accent); color: #001018; }
     .btn-danger { background: var(--danger); color: #2a0005; }
-    .btn-ghost { background: transparent; border: 1px solid #334155; color: var(--muted); }
+    .btn-ghost { background: var(--accent); border: 1px solid var(--accent); color:#001018; }
     .stack { display:flex; flex-direction: column; gap: .4rem; }
     .switch { display:flex; align-items:center; gap:.35rem; margin-top:.1rem; }
     table { width:100%; border-collapse: collapse; }
@@ -46,71 +47,86 @@
 #listBody td:last-child { text-align: right; white-space: nowrap; }
 #listBody .btn-danger { margin-left: .5rem; }
 
+
+/* copy helpers */
+.copy-bar { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; margin:-.2rem 0 .3rem; }
+.copy-msg { color: var(--muted); font-size:.85em; min-width: 140px; text-align:left; }
+.toast { position: fixed; top: 12px; right: 12px; background:#0b1220; color:var(--text); border:1px solid #334155; padding:.45rem .65rem; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.35); z-index: 1000; opacity:.98; }
+
+.h3-row { display:flex; align-items:center; justify-content:space-between; margin:.1rem 0 .4rem; }
+
+/* custom product combo with icons */
+.combo{position:relative;}
+.combo__button{width:100%;display:flex;align-items:center;gap:.5rem;justify-content:space-between;background:#0b1220;border:1px solid #334155;color:#e5e7eb;border-radius:8px;padding:.45rem .55rem;cursor:pointer}
+.combo__button .combo__label{display:flex;align-items:center;gap:.5rem;overflow:hidden}
+.combo__button .combo__label img{width:20px;height:20px;object-fit:contain;border-radius:3px}
+.combo__panel{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#0b1220;border:1px solid #334155;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);max-height:260px;overflow:auto;z-index:50}
+.combo__list{list-style:none;margin:0;padding:.25rem}
+.combo__item{display:flex;align-items:center;gap:.5rem;padding:.35rem .45rem;border-radius:6px;cursor:pointer}
+.combo__item:hover,.combo__item[aria-selected="true"]{background:#111827}
+.combo__item img{width:20px;height:20px;object-fit:contain;border-radius:3px}
+.combo__empty{padding:.4rem .6rem;color:#94a3b8}
+.hidden{display:none!important}
+
 </style>
 </head>
 <body>
-  <h1>Hay Day – Production Planner & Ingredient Calculator</h1>
-  <div class="container">
-    <p class="muted">Pick products, add quantities to the production list and instantly see which ingredients are needed in total. Optionally break sub‑products down into base ingredients.</p>
-
-    <div class="grid">
-      <section class="card stack">
-        <div class="row">
-          <div>
-            <label for="search">Search</label>
-            <input id="search" type="text" placeholder="Search products…" aria-label="Search products" />
-            <label for="product" style="margin-top:.35rem; display:block;">Product</label>
-            <select id="product" class="placeholder"></select>
-          </div>
-          <div style="max-width:96px">
-            <label for="qty">Qty</label>
-            <input id="qty" type="number" min="1" step="1" value="1" class="qty-input" />
-          </div>
-          <div style="max-width:160px; margin-left:1rem">
-            <button id="addBtn" class="btn">Add</button>
-          </div>
-        </div>
-        <div class="switch">
-          <input type="checkbox" id="recursive" />
-          <label for="recursive">Break sub‑products down (recursive)</label>
-        </div>
-        <div>
-          <button id="resetBtn" class="btn-ghost">Reset</button>
-        </div>
-      </section>
-
-      <section class="card">
-        <h3 style="margin:.1rem 0 .4rem">Production list</h3>
-        <table>
-          <thead>
-            <tr><th>Product</th><th style="width:120px">Qty</th><th style="width:120px"></th></tr>
-          </thead>
-          <tbody id="listBody"></tbody>
-        </table>
-      </section>
-    </div>
-
-    <section class="card" style="margin-top:.5rem">
-      <h3 style="margin:.1rem 0 .4rem">Required ingredients (total)</h3>
-      <div><span class="tag" id="modeTag">Direct ingredients</span></div>
-      <table style="margin-top:.3rem">
-        <thead>
-          <tr><th>Ingredient</th><th style="width:120px">Qty</th></tr>
-        </thead>
-        <tbody id="needsBody"></tbody>
-      </table>
-    </section>
-
-    <section class="card" style="margin-top:.5rem">
-      <h3 style="margin:.1rem 0 .4rem">Breakdown (tree)</h3>
-      <div class="tree" id="treeView"></div>
-      <div class="muted" id="treeHint" style="margin-top:.3rem">Tree shows full recursive breakdown by default.</div>
-    </section>
-
-    <footer>Made by Geek. For Geeks.</footer>
-  </div>
-
-  <script id="goods-data" type="application/json">
+<h1>Hay Day – Production Planner &amp; Ingredient Calculator</h1>
+<div class="container">
+<p class="muted">Pick products, add quantities to the production list and instantly see which ingredients are needed in total. Optionally break sub‑products down into base ingredients.</p>
+<div class="grid">
+<section class="card stack">
+<div class="row">
+<div>
+<label for="search">Search</label>
+<input aria-label="Search products" id="search" placeholder="Search products…" type="text"/>
+<label for="product" style="margin-top:.35rem; display:block;">Product</label>
+<select class="placeholder" id="product"></select>
+</div>
+<div style="max-width:96px">
+<label for="qty">Qty</label>
+<input class="qty-input" id="qty" min="1" placeholder="0" step="1" type="number"/>
+</div>
+<div style="max-width:160px; margin-left:1rem">
+<button class="btn" id="addBtn">Add</button>
+</div>
+</div>
+<div class="switch">
+<input id="recursive" type="checkbox"/>
+<label for="recursive">Break sub‑products down (recursive)</label>
+</div>
+<div>
+<button class="btn-ghost" id="resetBtn">Reset</button>
+</div>
+</section>
+<section class="card">
+<h3 style="margin:.1rem 0 .4rem">Production list</h3>
+<table>
+<thead>
+<tr><th>Product</th><th style="width:120px">Qty</th><th style="width:120px"></th></tr>
+</thead>
+<tbody id="listBody"></tbody>
+</table>
+</section>
+</div>
+<section class="card" style="margin-top:.5rem">
+<div class="h3-row"><h3 style="margin:0">Required ingredients (total)</h3><div class="copy-bar" style="margin:0"><button class="btn" id="copyTotalsBtn" type="button">Copy totals</button> <button class="btn-ghost" id="downloadTotalsPngBtn" type="button">PNG</button> <button class="btn-ghost" id="downloadTotalsJpgBtn" type="button">JPG</button><span aria-live="polite" class="copy-msg" id="copyTotalsMsg"></span></div></div>
+<div><span class="tag" id="modeTag">Direct ingredients</span></div>
+<table style="margin-top:.3rem">
+<thead>
+<tr><th>Ingredient</th><th style="width:120px">Qty</th></tr>
+</thead>
+<tbody id="needsBody"></tbody>
+</table>
+</section>
+<section class="card" style="margin-top:.5rem">
+<div class="h3-row"><h3 style="margin:0">Breakdown (tree)</h3><div class="copy-bar" style="margin:0"><button class="btn" id="copyTreeBtn" type="button">Copy tree</button> <button class="btn-ghost" id="downloadTreePngBtn" type="button">PNG</button> <button class="btn-ghost" id="downloadTreeJpgBtn" type="button">JPG</button><span aria-live="polite" class="copy-msg" id="copyTreeMsg"></span></div></div>
+<div class="tree" id="treeView"></div>
+<div class="muted" id="treeHint" style="margin-top:.3rem">Tree shows full recursive breakdown by default.</div>
+</section>
+<footer>Made by Geek. For Geeks.</footer>
+</div>
+<script id="goods-data" type="application/json">
 [
  {
   "name": "Bread",
@@ -1804,8 +1820,7 @@
  }
 ]
 </script>
-
-  <script>
+<script>
   const $ = (s) => document.querySelector(s);
   const fmt = (n) => Intl.NumberFormat('en-US').format(n);
 
@@ -2035,7 +2050,7 @@ function updateNeeds() {
     if (!name) return; // prevent adding placeholder
     production.set(name, (production.get(name) || 0) + qty);
     renderList(); updateNeeds(); updateTree();
-    qtyInput.value = '1';
+    qtyInput.value = ''; // reset to show placeholder 0
   });
 
   recursiveChk.addEventListener('change', () => { updateNeeds(); updateTree(); });
@@ -2049,5 +2064,245 @@ function updateNeeds() {
   updateNeeds();
   updateTree();
   </script>
+<script>
+(function(){
+  function showToast(message){
+    try{
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = message;
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.remove(); }, 1800);
+    }catch(e){ console.warn('toast fail', e); }
+  }
+  async function copyText(text){
+    if (!text) { showToast('Nothing to copy'); return false; }
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta=document.createElement('textarea');
+        ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand('copy'); ta.remove();
+      }
+      showToast('Copied to clipboard');
+      return true;
+    } catch(e){
+      console.error('copy failed', e);
+      alert('Copy failed. See console.');
+      return false;
+    }
+  }
+  function buildTotalsText(){
+    const rows=[...document.querySelectorAll('#needsBody tr')];
+    if(!rows.length) return '';
+    const lines=[];
+    for(const tr of rows){
+      const tds=tr.querySelectorAll('td');
+      if(tds.length>=2){
+        const name=(tds[0].textContent||'').trim();
+        const qty=(tds[1].textContent||'').trim();
+        if(name && qty) lines.push(`${name} x ${qty}`);
+      }
+    }
+    return lines.join('\n');
+  }
+  function buildTreeText(){
+    const root = document.getElementById('treeView');
+    if(!root) return '';
+    const list = root.querySelector(':scope > ul');
+    if(!list) return '';
+    const lines=[];
+    function walk(li, depth){
+      const row = li.querySelector(':scope > .node');
+      if(row){
+        const spans=[...row.querySelectorAll('span')];
+        let name='', qty='', src='';
+        if(spans[1]) name=spans[1].textContent.trim();
+        if(spans[2]) qty = spans[2].textContent.replace(/^×\s*/, 'x ').trim();
+        if(spans[3]) src = spans[3].textContent.replace(/^–\s*/, ' - ').trim();
+        const label=[name, qty, src].filter(Boolean).join(' ');
+        lines.push('  '.repeat(depth) + label);
+      }
+      const children = li.querySelector(':scope > ul');
+      if(children){ [...children.children].forEach(ch=>walk(ch, depth+1)); }
+    }
+    [...list.children].forEach(li=>walk(li,0));
+    return lines.join('\n');
+  }
+  function wireCopy(idBtn, idMsg, builder){
+    const btn = document.getElementById(idBtn);
+    const msg = document.getElementById(idMsg);
+    if(!btn) return;
+    btn.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      const txt = builder();
+      const ok = await copyText(txt);
+      if(msg){
+        msg.textContent = ok ? 'Copied to clipboard' : (txt? 'Copy failed' : 'Nothing to copy');
+        setTimeout(()=> msg.textContent='', 1800);
+      }
+    });
+  }
+  // Wire after DOM is fully ready
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ()=>{
+      wireCopy('copyTotalsBtn','copyTotalsMsg', buildTotalsText);
+      wireCopy('copyTreeBtn','copyTreeMsg', buildTreeText);
+    });
+  } else {
+    wireCopy('copyTotalsBtn','copyTotalsMsg', buildTotalsText);
+    wireCopy('copyTreeBtn','copyTreeMsg', buildTreeText);
+  }
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+function downloadDataUrl(filename, dataUrl){
+  const a=document.createElement('a'); a.href=dataUrl; a.download=filename; a.click();
+}
+async function elementToImage(el, type='image/png', quality=0.92, scale=2){
+  const node = (typeof el==='string')? document.querySelector(el) : el;
+  if(!node) throw new Error('element not found');
+  const canvas = await html2canvas(node, {
+    backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg') || '#0f172a',
+    scale
+  });
+  return (type==='image/jpeg') ? canvas.toDataURL('image/jpeg', quality) : canvas.toDataURL('image/png');
+}
+function hideButtonsIn(container){
+  const btns = Array.from(container.querySelectorAll('button'));
+  btns.forEach(b => b.dataset._prevVisibility = b.style.visibility || '');
+  btns.forEach(b => b.style.visibility = 'hidden');
+  return () => btns.forEach(b => b.style.visibility = b.dataset._prevVisibility);
+}
+function wireImageDownload(btnId, node, type){
+  const btn=document.getElementById(btnId); if(!btn) return;
+  btn.addEventListener('click', async ()=>{
+    try{
+      const restore = hideButtonsIn(node);
+      const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      const dataUrl = await elementToImage(node, type, 0.92, 2);
+      restore();
+      const base = (node && (node.id==='needsBody' || node.querySelector?.('#needsBody'))) ? 'ingredients' : 'tree';
+      const ext = (type==='image/jpeg')? 'jpg' : 'png';
+      downloadDataUrl(`${base}_${ts}.${ext}`, dataUrl);
+    }catch(e){ console.error('image export failed', e); alert('Export failed. See console.'); }
+  });
+}
+(function(){
+  function ready(fn){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
+  ready(()=>{
+    const needsSection = document.querySelector('#needsBody')?.closest('section.card') || document.querySelector('#needsBody');
+    const treeSection  = document.querySelector('#treeView')?.closest('section.card') || document.querySelector('#treeView');
+    wireImageDownload('downloadTotalsPngBtn', needsSection, 'image/png');
+    wireImageDownload('downloadTotalsJpgBtn', needsSection, 'image/jpeg');
+    wireImageDownload('downloadTreePngBtn',   treeSection,  'image/png');
+    wireImageDownload('downloadTreeJpgBtn',   treeSection,  'image/jpeg');
+  });
+})();
+</script>
+<script id="icons-map" type="application/json">{"Bread": "image/Bread.png", "Chicken feed": "image/Chicken_feed.png", "Cow feed": "image/Cow_feed.png", "Cream": "image/Cream.png", "Corn bread": "image/Corn_bread.png", "Brown sugar": "image/Brown_sugar.png", "Popcorn": "image/Popcorn.png", "Butter": "image/Butter.png", "Pancake": "image/Pancake.png", "Pig feed": "image/Pig_feed.png", "Cookie": "image/Cookie.png", "Bacon and eggs": "image/Bacon_and_eggs.png", "Cheese": "image/Cheese.png", "White sugar": "image/White_sugar.png", "Carrot pie": "image/Carrot_pie.png", "Pumpkin pie": "image/Pumpkin_pie.png", "Sheep feed": "image/Sheep_feed.png", "Buttered popcorn": "image/Buttered_popcorn.png", "Sweater": "image/Sweater.png", "Bacon pie": "image/Bacon_pie.png", "Syrup": "image/Syrup.png", "Cotton fabric": "image/Cotton_fabric.png", "Hamburger": "image/Hamburger.png", "Raspberry muffin": "image/Raspberry_muffin.png", "Blue woolly hat": "image/Blue_woolly_hat.png", "Cotton shirt": "image/Cotton_shirt.png", "Blue sweater": "image/Blue_sweater.png", "Carrot cake": "image/Carrot_cake.png", "Wooly chaps": "image/Wooly_chaps.png", "Cream cake": "image/Cream_cake.png", "Red berry cake": "image/Red_berry_cake.png", "Cheesecake": "image/Cheesecake.png", "Silver bar": "image/Silver_bar.png", "Chili popcorn": "image/Chili_popcorn.png", "Gold bar": "image/Gold_bar.png", "Platinum bar": "image/Platinum_bar.png", "Violet dress": "image/Violet_dress.png", "Blackberry muffin": "image/Blackberry_muffin.png", "Carrot juice": "image/Carrot_juice.png", "Red lure": "image/Red_lure.png", "Green lure": "image/Green_lure.png", "Blue lure": "image/Blue_lure.png", "Purple lure": "image/Purple_lure.png", "Gold lure": "image/Gold_lure.png", "Fish burger": "image/Fish_burger.png", "Apple pie": "image/Apple_pie.png", "Fish pie": "image/Fish_pie.png", "Apple juice": "image/Apple_juice.png", "Vanilla ice cream": "image/Vanilla_ice_cream.png", "Roasted tomatoes": "image/Roasted_tomatoes.png", "Cherry juice": "image/Cherry_juice.png", "Fishing net": "image/Fishing_net.png", "Mystery net": "image/Mystery_net.png", "Tomato juice": "image/Tomato_juice.png", "Berry juice": "image/Berry_juice.png", "Blueberry Cheesecake": "image/Blueberry_Cheesecake.png", "Goat feed": "image/Goat_feed.png", "Goat cheese": "image/Goat_cheese.png", "Pizza": "image/Pizza.png", "Refined coal": "image/Refined_coal.png", "Cherry popsicle": "image/Cherry_popsicle.png", "Blueberry Muffin": "image/Blueberry_Muffin.png", "Feta pie": "image/Feta_pie.png", "Iron bar": "image/Iron_bar.png", "Strawberry ice cream": "image/Strawberry_ice_cream.png", "Wheat bundle": "image/Wheat_bundle.png", "Meat bucket": "image/Meat_bucket.png", "Strawberry cake": "image/Strawberry_cake.png", "Baked potato": "image/Baked_potato.png", "Apple jam": "image/Apple_jam.png", "Chocolate cake": "image/Chocolate_cake.png", "Casserole": "image/Casserole.png", "Raspberry jam": "image/Raspberry_jam.png", "Spicy pizza": "image/Spicy_pizza.png", "Blackberry jam": "image/Blackberry_jam.png", "Potato feta cake": "image/Potato_feta_cake.png", "Cherry jam": "image/Cherry_jam.png", "Bracelet": "image/Bracelet.png", "Potato bread": "image/Potato_bread.png", "Shepherd's pie": "image/Shepherd_s_pie.png", "Chocolate ice cream": "image/Chocolate_ice_cream.png", "Necklace": "image/Necklace.png", "Honey": "image/Honey.png", "Honey popcorn": "image/Honey_popcorn.png", "Diamond ring": "image/Diamond_ring.png", "Fish and chips": "image/Fish_and_chips.png", "Iron bracelet": "image/Iron_bracelet.png", "Espresso": "image/Espresso.png", "Honey apple cake": "image/Honey_apple_cake.png", "Caffè latte": "image/Caff_latte.png", "Chocolate popcorn": "image/Chocolate_popcorn.png", "Lobster trap": "image/Lobster_trap.png", "Frutti di Mare pizza": "image/Frutti_di_Mare_pizza.png", "Caffè mocha": "image/Caff_mocha.png", "Soothing pad": "image/Soothing_pad.png", "Raspberry mocha": "image/Raspberry_mocha.png", "Lobster soup": "image/Lobster_soup.png", "Hot chocolate": "image/Hot_chocolate.png", "Tomato soup": "image/Tomato_soup.png", "Red scarf": "image/Red_scarf.png", "Lobster skewer": "image/Lobster_skewer.png", "Beeswax": "image/Beeswax.png", "Strawberry candle": "image/Strawberry_candle.png", "Rustic bouquet": "image/Rustic_bouquet.png", "Pumpkin soup": "image/Pumpkin_soup.png", "Asparagus quiche": "image/Asparagus_quiche.png", "Strawberry jam": "image/Strawberry_jam.png", "Duck trap": "image/Duck_trap.png", "Sesame ice cream": "image/Sesame_ice_cream.png", "Caramel apple": "image/Caramel_apple.png", "Pillow": "image/Pillow.png", "Asparagus soup": "image/Asparagus_soup.png", "Toffee": "image/Toffee.png", "Raspberry candle": "image/Raspberry_candle.png", "Pineapple juice": "image/Pineapple_juice.png", "Fish soup": "image/Fish_soup.png", "Soy sauce": "image/Soy_sauce.png", "Chocolate": "image/Chocolate.png", "Fancy cake": "image/Fancy_cake.png", "Sushi roll": "image/Sushi_roll.png", "Lollipop": "image/Lollipop.png", "Feta salad": "image/Feta_salad.png", "Lobster sushi": "image/Lobster_sushi.png", "Blanket": "image/Blanket.png", "Jelly beans": "image/Jelly_beans.png", "Olive oil": "image/Olive_oil.png", "Garlic bread": "image/Garlic_bread.png", "Veggie bagel": "image/Veggie_bagel.png", "Mayonnaise": "image/Mayonnaise.png", "BLT salad": "image/BLT_salad.png", "Caramel latte": "image/Caramel_latte.png", "Egg sushi": "image/Egg_sushi.png", "Honey peanuts": "image/Honey_peanuts.png", "Seafood salad": "image/Seafood_salad.png", "Berry smoothie": "image/Berry_smoothie.png", "Snack mix": "image/Snack_mix.png", "Bright bouquet": "image/Bright_bouquet.png", "Bacon toast": "image/Bacon_toast.png", "Pineapple cake": "image/Pineapple_cake.png", "Chocolate pie": "image/Chocolate_pie.png", "Cabbage soup": "image/Cabbage_soup.png", "Lemon curd": "image/Lemon_curd.png", "Olive dip": "image/Olive_dip.png", "Egg sandwich": "image/Egg_sandwich.png", "Green smoothie": "image/Green_smoothie.png", "Fresh pasta": "image/Fresh_pasta.png", "Pasta salad": "image/Pasta_salad.png", "Lemon pie": "image/Lemon_pie.png", "Grilled asparagus": "image/Grilled_asparagus.png", "Grilled onion": "image/Grilled_onion.png", "Lemon cake": "image/Lemon_cake.png", "Lemon essential oil": "image/Lemon_essential_oil.png", "Peanut butter milkshake": "image/Peanut_butter_milkshake.png", "Tomato sauce": "image/Tomato_sauce.png", "Honey toast": "image/Honey_toast.png", "Fried rice": "image/Fried_rice.png", "Yogurt smoothie": "image/Yogurt_smoothie.png", "Cloche hat": "image/Cloche_hat.png", "Cucumber smoothie": "image/Cucumber_smoothie.png", "Blueberry Chutney": "image/Blueberry_Chutney.png", "Flower shawl": "image/Flower_shawl.png", "Orange juice": "image/Orange_juice.png", "Peanut butter and jelly sandwich": "image/Peanut_butter_and_jelly_sandwich.png", "Onion soup": "image/Onion_soup.png", "Lemon candle": "image/Lemon_candle.png", "Top hat": "image/Top_hat.png", "Gnocchi": "image/Gnocchi.png", "Winter veggies": "image/Winter_veggies.png", "Rice noodles": "image/Rice_noodles.png", "Noodle soup": "image/Noodle_soup.png", "Gracious bouquet": "image/Gracious_bouquet.png", "Marmalade": "image/Marmalade.png", "Sun hat": "image/Sun_hat.png", "Veggie lasagna": "image/Veggie_lasagna.png", "Veggie platter": "image/Veggie_platter.png", "Chamomile essential oil": "image/Chamomile_essential_oil.png", "Hot dog": "image/Hot_dog.png", "Coleslaw": "image/Coleslaw.png", "Cotton candy": "image/Cotton_candy.png", "Peach tart": "image/Peach_tart.png", "Tofu dog": "image/Tofu_dog.png", "Big sushi roll": "image/Big_sushi_roll.png", "Beetroot salad": "image/Beetroot_salad.png", "Plain donut": "image/Plain_donut.png", "Salsa": "image/Salsa.png", "Taco": "image/Taco.png", "Colourful omelet": "image/Colourful_omelet.png", "Spring omelet": "image/Spring_omelet.png", "Summer rolls": "image/Summer_rolls.png", "Orange sorbet": "image/Orange_sorbet.png", "Corn dog": "image/Corn_dog.png", "Potato soup": "image/Potato_soup.png", "Sesame brittle": "image/Sesame_brittle.png", "Affogato": "image/Affogato.png", "Fish taco": "image/Fish_taco.png", "Peach jam": "image/Peach_jam.png", "Lobster pasta": "image/Lobster_pasta.png", "Cucumber sandwich": "image/Cucumber_sandwich.png", "Spicy fish": "image/Spicy_fish.png", "Sprinkled donut": "image/Sprinkled_donut.png", "Cheese omelet": "image/Cheese_omelet.png", "Green tea": "image/Green_tea.png", "Onion dog": "image/Onion_dog.png", "Stuffed peppers": "image/Stuffed_peppers.png", "Ginger essential oil": "image/Ginger_essential_oil.png", "Milk tea": "image/Milk_tea.png", "Bell pepper soup": "image/Bell_pepper_soup.png", "Chocolate fondue": "image/Chocolate_fondue.png", "Quesadilla": "image/Quesadilla.png", "Fruit salad": "image/Fruit_salad.png", "Crunchy donut": "image/Crunchy_donut.png", "Pasta carbonara": "image/Pasta_carbonara.png", "Peach ice cream": "image/Peach_ice_cream.png", "Honey tea": "image/Honey_tea.png", "Broccoli pasta": "image/Broccoli_pasta.png", "Rice omelet": "image/Rice_omelet.png", "Summer salad": "image/Summer_salad.png", "Grape juice": "image/Grape_juice.png", "Onion melt": "image/Onion_melt.png", "Honey soap": "image/Honey_soap.png", "Lemon lotion": "image/Lemon_lotion.png", "Colorful candles": "image/Colorful_candles.png", "Mint essential oil": "image/Mint_essential_oil.png", "Grape jam": "image/Grape_jam.png", "Mint ice cream": "image/Mint_ice_cream.png", "Flower crown": "image/Flower_crown.png", "Lemon tea": "image/Lemon_tea.png", "Bacon fondue": "image/Bacon_fondue.png", "Peanut noodles": "image/Peanut_noodles.png", "Gingerbread cookie": "image/Gingerbread_cookie.png", "Cream donut": "image/Cream_donut.png", "Nachos": "image/Nachos.png", "Spicy pasta": "image/Spicy_pasta.png", "Broccoli soup": "image/Broccoli_soup.png", "Bacon fries": "image/Bacon_fries.png", "Potato omelet": "image/Potato_omelet.png", "Mixed smoothie": "image/Mixed_smoothie.png", "Iced banana latte": "image/Iced_banana_latte.png", "Apple ginger tea": "image/Apple_ginger_tea.png", "Bacon donut": "image/Bacon_donut.png", "Passion fruit juice": "image/Passion_fruit_juice.png", "Orange tea": "image/Orange_tea.png", "Fruit cake": "image/Fruit_cake.png", "Mushroom salad": "image/Mushroom_salad.png", "Tofu stir fry": "image/Tofu_stir_fry.png", "Candy bouquet": "image/Candy_bouquet.png", "Grilled eggplant": "image/Grilled_eggplant.png", "Banana bread": "image/Banana_bread.png", "Cheese fondue": "image/Cheese_fondue.png", "Hand pies": "image/Hand_pies.png", "Pickles": "image/Pickles.png", "Iced tea": "image/Iced_tea.png", "Goat cheese toast": "image/Goat_cheese_toast.png", "Watermelon juice": "image/Watermelon_juice.png", "Birthday bouquet": "image/Birthday_bouquet.png", "Passion fruit pie": "image/Passion_fruit_pie.png", "Soft bouquet": "image/Soft_bouquet.png", "Black sesame smoothie": "image/Black_sesame_smoothie.png", "Exfoliating soap": "image/Exfoliating_soap.png", "Filled donut": "image/Filled_donut.png", "Banana pancakes": "image/Banana_pancakes.png", "Plum jam": "image/Plum_jam.png", "Tea pot": "image/Tea_pot.png", "Floral candle": "image/Floral_candle.png", "Chocolate roll": "image/Chocolate_roll.png", "Canned fish": "image/Canned_fish.png", "Hummus": "image/Hummus.png", "Banana split": "image/Banana_split.png", "Fish skewer": "image/Fish_skewer.png", "Passion fruit jam": "image/Passion_fruit_jam.png", "Potted plant": "image/Potted_plant.png", "Mint tea": "image/Mint_tea.png", "Mushroom pot pie": "image/Mushroom_pot_pie.png", "Mango juice": "image/Mango_juice.png", "Flower pendant": "image/Flower_pendant.png", "Chili poppers": "image/Chili_poppers.png", "Falafel": "image/Falafel.png", "Kimchi": "image/Kimchi.png", "Eggplant parmesan": "image/Eggplant_parmesan.png", "Honey face mask": "image/Honey_face_mask.png", "Clay mug": "image/Clay_mug.png", "Rich fudge": "image/Rich_fudge.png", "Cocoa smoothie": "image/Cocoa_smoothie.png", "Fried candy bar": "image/Fried_candy_bar.png", "Tart dressing": "image/Tart_dressing.png", "Tropical fondue": "image/Tropical_fondue.png", "Chamomile tea": "image/Chamomile_tea.png", "Mushroom pasta": "image/Mushroom_pasta.png", "Macaroon": "image/Macaroon.png", "Plum smoothie": "image/Plum_smoothie.png", "Dried fruit": "image/Dried_fruit.png", "Mint fudge": "image/Mint_fudge.png", "Coconut ice cream": "image/Coconut_ice_cream.png", "Samosa": "image/Samosa.png", "Plain yogurt": "image/Plain_yogurt.png", "Mushroom soup": "image/Mushroom_soup.png", "Chili fudge": "image/Chili_fudge.png", "Tropical smoothie": "image/Tropical_smoothie.png", "Guava juice": "image/Guava_juice.png", "Guava compote": "image/Guava_compote.png", "Strawberry yogurt": "image/Strawberry_yogurt.png", "Veggie bouquet": "image/Veggie_bouquet.png", "Chickpea stew": "image/Chickpea_stew.png", "Fruit sorbet": "image/Fruit_sorbet.png", "Pomegranate tea": "image/Pomegranate_tea.png", "Lemon fudge": "image/Lemon_fudge.png", "Pomegranate cake": "image/Pomegranate_cake.png", "Hummus wrap": "image/Hummus_wrap.png", "Tropical yogurt": "image/Tropical_yogurt.png", "Chili stew": "image/Chili_stew.png", "Plain cupcake": "image/Plain_cupcake.png", "Guava cupcake": "image/Guava_cupcake.png", "Rice ball": "image/Rice_ball.png", "Fresh diffuser": "image/Fresh_diffuser.png", "Peanut fudge": "image/Peanut_fudge.png", "Tropical cupcake": "image/Tropical_cupcake.png", "Winter stew": "image/Winter_stew.png", "Zesty perfume": "image/Zesty_perfume.png", "Cookie cupcake": "image/Cookie_cupcake.png", "Plain waffles": "image/Plain_waffles.png", "Berry waffles": "image/Berry_waffles.png", "Calming diffuser": "image/Calming_diffuser.png", "Orange salad": "image/Orange_salad.png", "Chocolate waffles": "image/Chocolate_waffles.png", "Blueberry Waffles": "image/Blueberry_Waffles.png", "Breakfast waffles": "image/Breakfast_waffles.png", "Breakfast bowl": "image/Breakfast_bowl.png", "Apple porridge": "image/Apple_porridge.png", "Pineapple coconut bars": "image/Pineapple_coconut_bars.png", "Sweet porridge": "image/Sweet_porridge.png", "Rich soap": "image/Rich_soap.png", "Fresh porridge": "image/Fresh_porridge.png", "Vanilla milkshake": "image/Vanilla_milkshake.png", "Mocha milkshake": "image/Mocha_milkshake.png", "Fruity milkshake": "image/Fruity_milkshake.png", "Bean dip": "image/Bean_dip.png", "Bean salad": "image/Bean_salad.png", "Spicy bean taco": "image/Spicy_bean_taco.png"}</script>
+<script>
+(function(){
+  const $ = (s)=>document.querySelector(s);
+  const productSel = $('#product');
+  if (!productSel) return;
+  // hide original select (but keep for value & logic)
+  productSel.classList.add('hidden');
+  // build container
+  const container = document.createElement('div');
+  container.className = 'combo';
+  productSel.insertAdjacentElement('afterend', container);
+
+  // read icons map
+  function getIconsMap(){
+    try { return JSON.parse(document.getElementById('icons-map').textContent)||{}; } catch { return {}; }
+  }
+  const ICONS = getIconsMap();
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'combo__button';
+  btn.setAttribute('aria-haspopup','listbox');
+  btn.setAttribute('aria-expanded','false');
+  const labelWrap = document.createElement('span');
+  labelWrap.className = 'combo__label';
+  const labelImg = document.createElement('img');
+  labelImg.alt=''; labelImg.loading='lazy';
+  const labelText = document.createElement('span');
+  labelText.textContent = 'Choose products…';
+  labelWrap.append(labelImg, labelText);
+  const caret = document.createElement('span');
+  caret.textContent = '▾';
+  btn.append(labelWrap, caret);
+
+  const panel = document.createElement('div');
+  panel.className = 'combo__panel hidden';
+  const list = document.createElement('ul');
+  list.className = 'combo__list';
+  list.setAttribute('role','listbox');
+  panel.appendChild(list);
+  container.append(btn, panel);
+
+  function open(){ panel.classList.remove('hidden'); btn.setAttribute('aria-expanded','true'); }
+  function close(){ panel.classList.add('hidden'); btn.setAttribute('aria-expanded','false'); }
+  function toggle(){ panel.classList.toggle('hidden'); btn.setAttribute('aria-expanded', String(!panel.classList.contains('hidden'))); }
+
+  document.addEventListener('click', (e)=>{ if(!container.contains(e.target)) close(); });
+
+  function render(filter=''){
+    const q = (filter||'').trim().toLowerCase();
+    list.innerHTML = '';
+    const items = [...productSel.options].filter(o=>!o.disabled && o.value).map(o=>o.value).sort((a,b)=>a.localeCompare(b,'en'));
+    let count=0;
+    for(const name of items){
+      if(q && !name.toLowerCase().includes(q)) continue;
+      const li = document.createElement('li');
+      li.className = 'combo__item';
+      li.setAttribute('role','option');
+      li.dataset.value = name;
+      const img = document.createElement('img');
+      img.alt=''; img.loading='lazy';
+      if(ICONS[name]) img.src = ICONS[name]; else img.style.display='none';
+      const span = document.createElement('span');
+      span.textContent = name;
+      li.append(img, span);
+      li.addEventListener('click', ()=> select(name));
+      list.appendChild(li);
+      count++;
+    }
+    if(count===0){
+      const empty = document.createElement('div');
+      empty.className = 'combo__empty';
+      empty.textContent = 'No results';
+      list.appendChild(empty);
+    }
+  }
+
+  function select(name){
+    // update hidden select
+    productSel.value = name;
+    // update label
+    const src = ICONS[name];
+    if(src){ labelImg.src = src; labelImg.style.display=''; } else { labelImg.removeAttribute('src'); labelImg.style.display='none'; }
+    labelText.textContent = name;
+    close();
+  }
+
+  // initial
+  render('');
+
+  // wire search box to filter this list too
+  const searchInput = document.getElementById('search');
+  if(searchInput){
+    const old = searchInput.oninput;
+    searchInput.addEventListener('input', ()=>{ render(searchInput.value||''); });
+  }
+
+  btn.addEventListener('click', toggle);
+})();
+</script>
 </body>
 </html>
