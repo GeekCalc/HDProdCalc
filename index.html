@@ -110,7 +110,7 @@
 </section>
 </div>
 <section class="card" style="margin-top:.5rem">
-<div class="h3-row"><h3 style="margin:0">Required ingredients (total)</h3><div class="copy-bar" style="margin:0"><button class="btn" id="copyTotalsBtn" type="button">Copy totals</button> <button class="btn-ghost" id="downloadTotalsPngBtn" type="button">PNG</button> <button class="btn-ghost" id="downloadTotalsJpgBtn" type="button">JPG</button><span aria-live="polite" class="copy-msg" id="copyTotalsMsg"></span></div></div>
+<div class="h3-row"><h3 style="margin:0">Required ingredients (total)</h3><div class="copy-bar" style="margin:0"><button class="btn" id="copyTotalsBtn" type="button">Copy totals</button> <button class="btn-ghost" id="downloadTotalsPngBtn" type="button">PNG</button> <span aria-live="polite" class="copy-msg" id="copyTotalsMsg"></span></div></div>
 <div><span class="tag" id="modeTag">Direct ingredients</span></div>
 <table style="margin-top:.3rem">
 <thead>
@@ -120,7 +120,7 @@
 </table>
 </section>
 <section class="card" style="margin-top:.5rem">
-<div class="h3-row"><h3 style="margin:0">Breakdown (tree)</h3><div class="copy-bar" style="margin:0"><button class="btn" id="copyTreeBtn" type="button">Copy tree</button> <button class="btn-ghost" id="downloadTreePngBtn" type="button">PNG</button> <button class="btn-ghost" id="downloadTreeJpgBtn" type="button">JPG</button><span aria-live="polite" class="copy-msg" id="copyTreeMsg"></span></div></div>
+<div class="h3-row"><h3 style="margin:0">Breakdown (tree)</h3><div class="copy-bar" style="margin:0"><button class="btn" id="copyTreeBtn" type="button">Copy tree</button> <button class="btn-ghost" id="downloadTreePngBtn" type="button">PNG</button> <span aria-live="polite" class="copy-msg" id="copyTreeMsg"></span></div></div>
 <div class="tree" id="treeView"></div>
 <div class="muted" id="treeHint" style="margin-top:.3rem">Tree shows full recursive breakdown by default.</div>
 </section>
@@ -1778,18 +1778,18 @@
   const fmt = (n) => Intl.NumberFormat('en-US').format(n);
 
   function parseNeeds(text) {
-    const map = Object.create(null);
-    if (!text || text === 'N/A') return map;
-    const rx = /([A-Za-z][A-Za-z'\-\s]+?)\s*\((\d+)\)/g;
-    let m;
-    while ((m = rx.exec(text)) !== null) {
-      const name = m[1].trim();
-      const count = parseInt(m[2], 10) || 0;
-      if (!name || !count) continue;
-      map[name] = (map[name] || 0) + count;
-    }
-    return map;
+  const map = {};
+  if (!text) return map;
+  const rx = /([A-Za-z0-9][A-Za-z0-9 '\-\s]+?)\s*\((\d+)\)/g;
+  let m;
+  while ((m = rx.exec(text)) !== null) {
+    const name = m[1].trim();
+    const count = parseInt(m[2], 10);
+    if (!name || !count) continue;
+    map[name] = (map[name] || 0) + count;
   }
+  return map;
+}
 
   const GOODS = JSON.parse(document.getElementById('goods-data').textContent);
   const GOODS_MAP = new Map(GOODS.map(g => [g.name, parseNeeds(g.needs)]));
@@ -2150,7 +2150,7 @@ function wireImageDownload(btnId, node, type){
     const needsSection = document.querySelector('#needsBody')?.closest('section.card') || document.querySelector('#needsBody');
     const treeSection  = document.querySelector('#treeView')?.closest('section.card') || document.querySelector('#treeView');
     wireImageDownload('downloadTotalsPngBtn', needsSection, 'image/png');
-    wireImageDownload('downloadTotalsJpgBtn', needsSection, 'image/jpeg');
+    
     wireImageDownload('downloadTreePngBtn',   treeSection,  'image/png');
     wireImageDownload('downloadTreeJpgBtn',   treeSection,  'image/jpeg');
   });
